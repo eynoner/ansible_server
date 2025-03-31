@@ -13,12 +13,21 @@
       tags: docker,sonar
       community.docker.docker_compose_v2_pull:
         project_src: /mnt/raid/sonarr/
+      register: sonnar_changed
 
     - name: Restart sonarr compose
       community.docker.docker_compose_v2:
         project_src: /mnt/raid/sonarr/
         state: present
         recreate: auto
+      when: sonnar_changed.changed
+      
+
+    - name: Update immich containers
+      tags: docker,immich
+      community.docker.docker_compose_v2_pull:
+        project_src: /mnt/raid/immich-app/
+      register: immich_changed
 
     - name: rsync immich data
       tags: immich,docker
@@ -34,21 +43,40 @@
           - "--exclude='**/encoded-video/'"
           - "--delete"
       delegate_to: "{{ inventory_hostname }}"
-
-    - name: Update immich containers
-      tags: docker,immich
-      community.docker.docker_compose_v2_pull:
-        project_src: /mnt/raid/immich-app/
-      register: immich_changed
+      when: immich_changed.changed
 
     - name: Restart immich compose
-
       community.docker.docker_compose_v2:
         project_src: /mnt/raid/immich-app/
         state: present
         recreate: auto
-      when: immich_changed is defined and immich_changed.changed
+      when: immich_changed.changed
 
+    - name: Update jacket containers
+      tags: docker,jacket
+      community.docker.docker_compose_v2_pull:
+        project_src: /mnt/raid/jackett/
+      register: jacket_changed
 
+    - name: Restart jacket compose
+
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/jackett/
+        state: present
+        recreate: auto
+      when: jacket_changed.changed
+
+    - name: Update jellyfin containers
+      tags: docker,jellyfin
+      community.docker.docker_compose_v2_pull:
+        project_src: /mnt/raid/jillyfin/
+      register: jellyfin_changed
+
+    - name: Restart jellyfin compose
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/jillyfin/
+        state: present
+        recreate: auto
+      when: jellyfin_changed.changed
 
 # sudo rsync -avh --progress --no-owner --no-group --delete --exclude='**/thumbs/' --exclude='**/encoded-video/' /mnt/raid/immich-app/ /media/yanec/Expansion/immich-app.backup/
