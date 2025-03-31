@@ -79,4 +79,46 @@
         recreate: auto
       when: jellyfin_changed.changed
 
+    #homeassistant/
+    - name: Update homeassistant containers
+      tags: docker,homeassistant
+      community.docker.docker_compose_v2_pull:
+        project_src: /mnt/raid/homeassistant/
+      register: homeassistant_changed
+
+    - name: Restart homeassistant compose
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/homeassistant/
+        state: present
+        recreate: auto
+      when: homeassistant_changed.changed
+      #torrent
+    - name: Update torrent containers
+      tags: docker,torrent
+      community.docker.docker_compose_v2_pull:
+        project_src: /mnt/raid/torrent/
+      register: torrent_changed
+
+    - name: Restart torrent compose
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/torrent/
+        state: present
+        recreate: auto
+      when: torrent_changed.changed  
+
+
+    # - name: Update {{ service_name }} containers
+    #   tags: docker,{{ service_name }}
+    #   community.docker.docker_compose_v2_pull:
+    #     project_src: /mnt/raid/{{ service_name }}/
+    #   register: "{{ service_name }}_changed"
+
+    # - name: Update {{ service_name }}
+    #   community.docker.docker_compose_v2:
+    #     project_src: /mnt/raid/{{ service_name }}
+    #     state: present
+    #     recreate: auto
+    #   when: "{{ service_name }}_changed.changed"
+
+
 # sudo rsync -avh --progress --no-owner --no-group --delete --exclude='**/thumbs/' --exclude='**/encoded-video/' /mnt/raid/immich-app/ /media/yanec/Expansion/immich-app.backup/
