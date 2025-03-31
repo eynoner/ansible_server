@@ -1,0 +1,54 @@
+---
+
+- hosts: all
+  become: true
+  tasks:
+    - name: Install hello world
+      tags: docker
+
+      community.docker.docker_image_pull:
+        name: testcontainers/helloworld
+
+    - name: Update sonnar containers
+      tags: docker,sonar
+      community.docker.docker_compose_v2_pull:
+        project_src: /mnt/raid/sonarr/
+
+    - name: Restart sonarr compose
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/sonarr/
+        state: present
+        recreate: auto
+
+    - name: rsync immich data
+      tags: immich,docker
+      synchronize:
+        src: /mnt/raid/immich-app/
+        dest: /media/yanec/Expansion/immich-app.backup/
+        archive: true
+        group: false
+        owner: false
+        mode: push
+        rsync_opts:
+          - "--exclude='**/thumbs/'"
+          - "--exclude='**/encoded-video/'"
+          - "--delete"
+      delegate_to: "{{ inventory_hostname }}"
+
+    - name: Update immich containers
+      tags: docker,immich
+      community.docker.docker_compose_v2_pull:
+        project_src: /mnt/raid/immich-app/
+      register: immich_changed
+
+    - name: Restart immich compose
+
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/immich-app/
+        state: present
+        recreate: auto
+      when: immich_changed is defined and immich_changed.changed
+
+
+
+# sudo rsync -avh --progress --no-owner --no-group --delete --exclude='**/thumbs/' --exclude='**/encoded-video/' /mnt/raid/immich-app/ /media/yanec/Expansion/immich-app.backup/
