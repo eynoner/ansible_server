@@ -92,6 +92,7 @@
         state: present
         recreate: auto
       when: homeassistant_changed.changed
+      
       #torrent
     - name: Update torrent containers
       tags: docker,torrent
@@ -105,7 +106,19 @@
         state: present
         recreate: auto
       when: torrent_changed.changed  
+#nginx-container
+    - name: Update nginx-container containers
+      tags: docker,nginx-container
+      community.docker.docker_compose_v2_pull:
+        project_src: /mnt/raid/nginx-container/
+      register: nginx_changed
 
+    - name: Restart nginx-container compose
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/nginx-container/
+        state: present
+        recreate: auto
+      when: nginx_changed.changed      
 
     # - name: Update {{ service_name }} containers
     #   tags: docker,{{ service_name }}
