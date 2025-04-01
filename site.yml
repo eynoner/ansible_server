@@ -108,7 +108,7 @@
       when: torrent_changed.changed  
 #nginx-container
     - name: Update nginx-container containers
-      tags: docker,nginx-container
+      tags: docker,nginx
       community.docker.docker_compose_v2_pull:
         project_src: /mnt/raid/nginx-container/
       register: nginx_changed
@@ -119,7 +119,21 @@
         state: present
         recreate: auto
       when: nginx_changed.changed      
+#monitoring(prometheus, grafana, cadvisor, node-exporter)
+    - name: Update monitoring containers
+      tags: docker,monitoring,prometheus,grafana,cadvisor,node-exporter
+      community.docker.docker_compose_v2_pull:
+        project_src: /mnt/raid/monitoring/
+      register: monitoring_changed
 
+    - name: Restart monitoring compose
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/monitoring/
+        state: present
+        recreate: auto
+      when: monitoring_changed.changed
+
+  
     # - name: Update {{ service_name }} containers
     #   tags: docker,{{ service_name }}
     #   community.docker.docker_compose_v2_pull:
