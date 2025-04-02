@@ -133,7 +133,76 @@
         recreate: auto
       when: monitoring_changed.changed
 
-  
+#nextcloud
+    - name: Pull latest nextcloud image
+      tags: build
+      docker_image:
+        name: nextcloud:latest
+        source: pull
+      register: nextcloud_pulled
+
+    - name: Build Docker image manually
+      become: yes
+      tags: build
+      command: docker build -t nextcloud-with-smbclient .
+      args:
+        chdir: /mnt/raid/nextcloud
+      register: build_output
+      when: nextcloud_pulled.changed
+
+    - name: Restart nextcloud compose
+      tags: build
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/nextcloud/
+        state: present
+        recreate: auto
+      when: nextcloud_pulled.changed    
+    - name: rsync raid data to external drive
+      tags: backup,docker
+      synchronize:
+        src: /mnt/raid/
+        dest: /media/yanec/Expansion/cloud
+        archive: true
+        group: false
+        owner: false
+        copy_links: true
+        mode: push
+        rsync_opts:
+          - "--exclude='immich-app'" 
+          - "--exclude='storage'"
+          - "--exclude='**/files_trashbin/'"
+          - "--exclude='lost+found'"
+          - "--exclude='**/app-discover-cache/'"
+          - "--exclude='**/*ipc-socket*'"
+          - "--exclude='**/*logs*'"
+          - "--delete"
+      delegate_to: "{{ inventory_hostname }}"
+      when: nextcloud_pulled.changed        
+
+    # - name: build nextcloud container
+    #   tags: build
+    #   community.docker.docker_image:
+    #     name: nextcloud-with-smbclient-new
+    #     build:
+    #       path: /mnt/raid/nextcloud
+    #       dockerfile: Dockerfile
+    #     source: build
+
+    # - name: Update nextcloud containers
+    #   tags: docker,nextcloud
+    #   community.docker.docker_compose_v2_pull:
+    #     project_src: /mnt/raid/nextcloud/
+    #   register: nextcloud_changed
+
+
+
+    # - name: Restart nextcloud compose
+    #   community.docker.docker_compose_v2:
+    #     project_src: /mnt/raid/nextcloud/
+    #     state: present
+    #     recreate: auto
+    #   when: nextcloud_changed.changed
+  #sudo rsync -avh --progress --no-owner --no-group --delete --exclude='immich-app' --exclude='storage' --exclude="**/files_trashbin/" --exclude='lost+found' /mnt/raid/ /media/yanec/Expansion/cloud
     # - name: Update {{ service_name }} containers
     #   tags: docker,{{ service_name }}
     #   community.docker.docker_compose_v2_pull:
