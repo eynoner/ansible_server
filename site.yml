@@ -3,12 +3,6 @@
 - hosts: all
   become: true
   tasks:
-    - name: Install hello world
-      tags: docker
-
-      community.docker.docker_image_pull:
-        name: testcontainers/helloworld
-
     - name: Update sonnar containers
       tags: docker,sonar
       community.docker.docker_compose_v2_pull:
