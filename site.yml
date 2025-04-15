@@ -3,19 +3,63 @@
 - hosts: all
   become: true
   tasks:
-    - name: Update sonnar containers
-      tags: docker,sonar
-      community.docker.docker_compose_v2_pull:
-        project_src: /mnt/raid/sonarr/
-      register: sonnar_changed
+  #nginx-container
+    - name: copy nginx files
+      tags: nginx
+      copy: 
+        src: nginx-container
+        dest: /mnt/raid/
 
-    - name: Restart sonarr compose
+    - name: Update nginx-container containers
+      tags: docker,nginx
       community.docker.docker_compose_v2:
-        project_src: /mnt/raid/sonarr/
+        project_src: /mnt/raid/nginx-container/
+        pull: always
         state: present
         recreate: auto
-      when: sonnar_changed.changed
-      
+#Sonarr    
+    - name: Update sonnar containers
+      tags: docker,sonar
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/sonarr/
+        pull: always
+        state: present
+        recreate: auto
+#Jacket
+    - name: Update jacket compose
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/jackett/
+        pull: always
+        state: present
+        recreate: auto
+#Jellyfin
+    - name: Update jellyfin compose
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/jillyfin/
+        pull: always
+        state: present
+        recreate: auto
+#homeassistant
+    - name: Update homeassistant compose
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/homeassistant/
+        pull: always
+        state: present
+        recreate: auto      
+#torrent
+    - name: Update torrent compose
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/torrent/
+        pull: always
+        state: present
+        recreate: auto
+#monitoring(prometheus, grafana, cadvisor, node-exporter)
+    - name: Update monitoring compose
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/monitoring/
+        pull: always
+        state: present
+        recreate: auto
 
     - name: Update immich containers
       tags: docker,immich
@@ -46,86 +90,6 @@
         recreate: auto
       when: immich_changed.changed
 
-    - name: Update jacket containers
-      tags: docker,jacket
-      community.docker.docker_compose_v2_pull:
-        project_src: /mnt/raid/jackett/
-      register: jacket_changed
-
-    - name: Restart jacket compose
-
-      community.docker.docker_compose_v2:
-        project_src: /mnt/raid/jackett/
-        state: present
-        recreate: auto
-      when: jacket_changed.changed
-
-    - name: Update jellyfin containers
-      tags: docker,jellyfin
-      community.docker.docker_compose_v2_pull:
-        project_src: /mnt/raid/jillyfin/
-      register: jellyfin_changed
-
-    - name: Restart jellyfin compose
-      community.docker.docker_compose_v2:
-        project_src: /mnt/raid/jillyfin/
-        state: present
-        recreate: auto
-      when: jellyfin_changed.changed
-
-    #homeassistant/
-    - name: Update homeassistant containers
-      tags: docker,homeassistant
-      community.docker.docker_compose_v2_pull:
-        project_src: /mnt/raid/homeassistant/
-      register: homeassistant_changed
-
-    - name: Restart homeassistant compose
-      community.docker.docker_compose_v2:
-        project_src: /mnt/raid/homeassistant/
-        state: present
-        recreate: auto
-      when: homeassistant_changed.changed
-      
-      #torrent
-    - name: Update torrent containers
-      tags: docker,torrent
-      community.docker.docker_compose_v2_pull:
-        project_src: /mnt/raid/torrent/
-      register: torrent_changed
-
-    - name: Restart torrent compose
-      community.docker.docker_compose_v2:
-        project_src: /mnt/raid/torrent/
-        state: present
-        recreate: auto
-      when: torrent_changed.changed  
-#nginx-container
-    - name: Update nginx-container containers
-      tags: docker,nginx
-      community.docker.docker_compose_v2_pull:
-        project_src: /mnt/raid/nginx-container/
-      register: nginx_changed
-
-    - name: Restart nginx-container compose
-      community.docker.docker_compose_v2:
-        project_src: /mnt/raid/nginx-container/
-        state: present
-        recreate: auto
-      when: nginx_changed.changed      
-#monitoring(prometheus, grafana, cadvisor, node-exporter)
-    - name: Update monitoring containers
-      tags: docker,monitoring,prometheus,grafana,cadvisor,node-exporter
-      community.docker.docker_compose_v2_pull:
-        project_src: /mnt/raid/monitoring/
-      register: monitoring_changed
-
-    - name: Restart monitoring compose
-      community.docker.docker_compose_v2:
-        project_src: /mnt/raid/monitoring/
-        state: present
-        recreate: auto
-      when: monitoring_changed.changed
 
 #nextcloud
     - name: Pull latest nextcloud image
