@@ -5,10 +5,11 @@
   tasks:
   #nginx-container
     - name: copy nginx files
-      tags: nginx
+      tags: ng
       copy: 
         src: nginx-container
         dest: /mnt/raid/
+      register: nginx
 
     - name: Update nginx-container containers
       tags: docker,nginx
@@ -17,6 +18,32 @@
         pull: always
         state: present
         recreate: auto
+    
+    - name: Check nginx conf validity
+      tags: ng
+      community.docker.docker_container_exec:
+        container: "nginx"
+        command: "nginx -t"
+      register: nginx_config_check
+      failed_when: false
+      changed_when: false
+
+    - name: Assert that Nginx configuration is correct
+      tags: ng
+      assert:
+        that:
+          - nginx_config_check.rc == 0
+        fail_msg: >-
+          Nginx configuration test failed:
+          {{ nginx_config_check.stderr }}
+
+    - name: restart nginx container
+      tags: docker,nginx,ng
+      community.docker.docker_compose_v2:
+        project_src: /mnt/raid/nginx-container/
+        state: restarted
+      when: nginx.changed
+
 #Sonarr    
     - name: Update sonnar containers
       tags: docker,sonar
