@@ -5,7 +5,7 @@
   tasks:
   #nginx-container
     - name: copy nginx files
-      tags: ng
+      tags: docker,nginx
       copy: 
         src: nginx-container
         dest: /mnt/raid/
@@ -20,7 +20,7 @@
         recreate: auto
     
     - name: Check nginx conf validity
-      tags: ng
+      tags: docker,nginx
       community.docker.docker_container_exec:
         container: "nginx"
         command: "nginx -t"
@@ -29,7 +29,7 @@
       changed_when: false
 
     - name: Assert that Nginx configuration is correct
-      tags: ng
+      tags: docker,nginx
       assert:
         that:
           - nginx_config_check.rc == 0
@@ -38,7 +38,7 @@
           {{ nginx_config_check.stderr }}
 
     - name: restart nginx container
-      tags: docker,nginx,ng
+      tags: docker,nginx
       community.docker.docker_compose_v2:
         project_src: /mnt/raid/nginx-container/
         state: restarted
